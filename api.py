@@ -3,46 +3,24 @@
 import os, sys
 import sqlite3
 
-from flask import Flask, jsonify, abort, make_response, request
+from flask import Flask, jsonify, abort, make_response, request, redirect, url_for
 from flask_restful import Api, Resource, reqparse, fields, marshal, request
+from werkzeug.utils import secure_filename
 #from flask_httpauth import HTTPBasicAuth
 #from mysql.connector import (connection)
-
 
 app = Flask(__name__, static_url_path="")
 api = Api(app)
 
+UPLOAD_FOLDER = os.path.basename('uploads')
+ALLOWED_EXTENSIONS = set(['png', 'jpg', 'jpeg'])
+app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+
 conn = sqlite3.connect('banco.db', check_same_thread=False)
-'''
-auth = HTTPBasicAuth()
-@auth.get_password
-def get_password(username):
-    if username == 'lincoln':
-        return 'python'
-    return None
 
-@auth.error_handler
-def unathorized():
-    # return 403 instead of 401 to prevent browsers from displaying the default
-    # auth dialog
-    return make_response(jsonify({'message': 'Unathorized access'}), 403)
-
-
-
-
-users = [
-    {
-        "id": 1,
-        "name": "Lincoln",
-        "cpf": "075.755.222-91",
-        "mail": "lincoln@pucminas.br",
-        "password": "dasdas",
-        "address": "Rua Walter Ianni, 55, São Gabriel, Belo Horizonte",
-        "birth_date": "2018-05-15"
-    }
-]
-'''
-
+def allowed_file(filename):
+        return '.' in filename and \
+           filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
 class Appliances(Resource):
     def get(self):
@@ -55,16 +33,25 @@ class Appliances(Resource):
         parser = reqparse.RequestParser()
         parser.add_argument('name')
         parser.add_argument('description')
-        parser.add_argument('photo_url')
         parser.add_argument('voltage')
         parser.add_argument('power_in_use')
         parser.add_argument('power_in_standby')
         args = parser.parse_args()
 
+        file = request.files['photo']
+
+        if file and allowed_file(file.filename):
+            filename = secure_filename(file.filename)
+            f = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+            photoPath = app.config['UPLOAD_FOLDER']+'/'+filename
+            file.save(f)
+        else:
+            return "Formato da foto incorreto ou arquivo inexistente",400
+
         cursor = conn.cursor()
         a_name = args['name']
         a_description = args['description']
-        a_photo_url = args['photo_url']
+        a_photo_url = photoPath
         a_voltage = args['voltage']
         a_power_in_use = int(args['power_in_use'])
         a_power_in_standby = int(args['power_in_standby'])
@@ -81,33 +68,7 @@ class Appliance(Resource):
         else:
             return jsonify({'appliance': query.fetchall()})
     
-    '''
-    def put(self, name):
-        parser = reqparse.RequestParser()
-        parser.add_argument("age")
-        parser.add_argument(occupation)
-        args = parser.parse_args()
 
-        for user in users:
-            if(name == user["name"]):
-                user["age"] = args["age"]
-                user["occupation"] =  args["occupation"]
-                return user, 200 #ok
-            
-        user = {
-            "name": name,
-            "age": args["age"],
-            "occupation": args["occupation"]
-        }
-
-        users.append(user)
-        return user, 201 #Criado 
-
-    def delete(self, name):
-        global users
-        users = [user for user in users if user["name"] != name]
-        return "{} is deleted.".format(name), 200
-   '''
 
 api.add_resource(Appliance, "/api-dad/appliances/<int:id>")
 api.add_resource(Appliances, "/api-dad/appliances")
