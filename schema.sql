@@ -1,0 +1,9 @@
+CREATE TABLE appliances(
+id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+name VARCHAR(100) NOT NULL,
+description VARCHAR(300) NOT NULL,
+photo_url VARCHAR(255) NOT NULL,
+voltage VARCHAR(6) NOT NULL,
+power_in_use INTEGER NOT NULL,
+power_in_standby INTEGER
+);
