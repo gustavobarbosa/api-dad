@@ -15,6 +15,7 @@ api = Api(app)
 UPLOAD_FOLDER = os.path.basename('uploads')
 ALLOWED_EXTENSIONS = set(['png', 'jpg', 'jpeg'])
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+app.config['JSON_AS_ASCII'] = False
 
 conn = sqlite3.connect('banco.db', check_same_thread=False)
 
@@ -63,15 +64,26 @@ class Appliances(Resource):
 class Appliance(Resource):
     def get(self, id):
         query = conn.execute("select * FROM appliances WHERE id="+str(id)+";")
-        if query is None:
+        if query != None:
             return 'Aparelho doméstico não encontrado', 404
         else:
             return jsonify({'appliance': query.fetchall()})
     
+#função de verificação de login
+class Users(Resource):
+    def get(self,user,senha):
+        
+        query=conn.execute("select mail,password FROM users where mail='"+user+"' AND password ='"+senha+"';");
+        #coloquei aspas simples na query antes dos valores, sqlite não le como string
+        if query != None :
+            
+            return 'Usuário ou senha incorretos! Já possui cadastro no sistema?',404
+        else:
+            return jsonify({'messagem':'login informado correto','codigo':200})
 
-
-api.add_resource(Appliance, "/api-dad/appliances/<int:id>")
 api.add_resource(Appliances, "/api-dad/appliances")
+api.add_resource(Appliance, "/api-dad/appliances/<int:id>")
+api.add_resource(Users, "/api-dad/users/login/<user>/<senha>")
 
 app.run(debug=True)
 conn.close()
