@@ -97,7 +97,7 @@ class Create(Resource):
         parser.add_argument('birth_date')
         args = parser.parse_args()
 
-        cursos= conn.cursor()
+        cursor= conn.cursor()
         a_name = args['name']
         a_cpf = args['cpf']
         a_mail= args['mail']
@@ -109,7 +109,7 @@ class Create(Resource):
         if a_pass != a_pass_conf:
             return 'A confirmação de senha não está correta!', 404
         else:
-            cursor.execute()#insert no banco
+            cursor.execute('INSERT INTO users (name,cpf,mail,password,address,birth_date) VALUES (?,?,?,?,?,?)',(a_name,a_cpf,a_mail,a_pass,a_address,a_birth))#insert no banco
             conn.commit()
             return args,201
 
